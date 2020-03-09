@@ -39,6 +39,9 @@ sealed class FXM_2_OBJ {
             // имена сабмешей/материалов
             List<string> mtr_list = new List<string>();
 
+            int keyposes = 0;
+            int vert_type = 0;
+
             // открыли fxm файл и прочли данные
             using ( BinaryReader br = new BinaryReader( File.Open( fxmName, FileMode.Open ) ) ) {
                 int length = ( int ) br.BaseStream.Length;
@@ -50,7 +53,7 @@ sealed class FXM_2_OBJ {
                 }
                 // файл fxm может содержать и данные о скелете модели
                 // здесь эти данные пропускаются, но их можно использовать при необходимости
-                int keyposes = br.ReadInt32();
+                keyposes = br.ReadInt32();
                 for ( int kp = 0; kp < keyposes; kp++ ) {
                     int joint_count = br.ReadInt32();
                     for ( int j = 0; j < joint_count; j++ ) {
@@ -96,7 +99,7 @@ sealed class FXM_2_OBJ {
                         break;
                     }
                     // размер блока на одну вершину
-                    int vert_type = br.ReadInt32();
+                    vert_type = br.ReadInt32();
                     if ( vert_type != 32 && vert_type != 40 ) {
                         Console.WriteLine( "Invalid vert_type: " + vert_type + " in file " + Path.GetFileNameWithoutExtension( fxmName ) );
                         valid = false;
@@ -145,8 +148,9 @@ sealed class FXM_2_OBJ {
                 br.Close();
             }
 
-            // если дошли до сюда, значит файл успешно прочитан и его можно удалить
-            // File.Delete( fxmName );
+            if ( keyposes == 0 && vert_type == 32 ) {
+                File.Delete( fxmName );
+            }
 
             // записали данные в obj
             using ( StreamWriter sw = new StreamWriter( Directory.GetCurrentDirectory() + "/" + Path.GetFileNameWithoutExtension( fxmName ) + ".obj" ) ) {
