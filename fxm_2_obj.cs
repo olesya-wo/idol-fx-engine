@@ -41,6 +41,7 @@ sealed class FXM_2_OBJ {
 
             // открыли fxm файл и прочли данные
             using ( BinaryReader br = new BinaryReader( File.Open( fxmName, FileMode.Open ) ) ) {
+                int length = ( int ) br.BaseStream.Length;
                 // проверяем версию файла
                 int version = br.ReadInt32();
                 if ( version != 1 && version != 2 ) {
@@ -78,21 +79,49 @@ sealed class FXM_2_OBJ {
                 int submesh_count = br.ReadInt32();
                 // для каждой сабмеши
                 int fc = 1;
+                bool valid = true;
                 for ( int subm = 0; subm < submesh_count; subm++ ) {
                     // читаем имя файла текстуры/материала
                     mtr_list.Add( ReadName( br ) );
-                    // после имени проверяем и пропускаем 24 байт ненужной здесь информации
-                    byte[] suff = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x12, 0x01, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00 };
-                    bool valid = true;
-                    for ( int s = 0; s < 24; s++ ) {
+                    // после имени проверяем и пропускаем 12 нулевых байт
+                    for ( int s = 0; s < 12 && valid; s++ ) {
                         byte b = br.ReadByte();
-                        if ( b != suff[ s ] ) { valid = false; }
+                        if ( b != 0 ) { valid = false; }
                     }
-                    if ( !valid ) { Console.WriteLine( "Invalid texture suffix in file " + Path.GetFileNameWithoutExtension( fxmName ) ); }
+                    // не совсем ясно, что это, но зависит от version
+                    int tmp = br.ReadInt32();
+                    if ( tmp != 274 && tmp != 530 ) { valid = false; }
+                    if ( !valid ) {
+                        Console.WriteLine( "Invalid texture suffix in file " + Path.GetFileNameWithoutExtension( fxmName ) );
+                        break;
+                    }
+                    // размер блока на одну вершину
+                    int vert_type = br.ReadInt32();
+                    if ( vert_type != 32 && vert_type != 40 ) {
+                        Console.WriteLine( "Invalid vert_type: " + vert_type + " in file " + Path.GetFileNameWithoutExtension( fxmName ) );
+                        valid = false;
+                        break;
+                    }
+                    // единичка
+                    tmp = br.ReadInt32();
+                    if ( tmp != 1 ) { valid = false; }
+                    if ( !valid ) {
+                        Console.WriteLine( "Invalid block_1 in file " + Path.GetFileNameWithoutExtension( fxmName ) );
+                        break;
+                    }
                     // количество граней
                     int faces_count = br.ReadInt32();
                     // количество вершин
                     int vertex_count = br.ReadInt32();
+                    // Проверяем корректность
+                    int mem = faces_count * 2 * 3 + vertex_count * 4 * 8;
+                    var stream = br.BaseStream;
+                    long pos = stream.Position;
+                    if ( length - pos < mem ) {
+                        Console.WriteLine( "Invalid data. Requested: " + mem + ". Pos: " + pos );
+                        valid = false;
+                        break;
+                    }
                     // читаем грани f1 f2 f3
                     List<Face> face_list = new List<Face>();
                     for ( int i = 0; i < faces_count; i++ ) {
@@ -105,8 +134,14 @@ sealed class FXM_2_OBJ {
                         vert_list.Add( new Vertex( br.ReadSingle(), br.ReadSingle(), br.ReadSingle() ) );
                         norm_list.Add( new Vertex( br.ReadSingle(), br.ReadSingle(), br.ReadSingle() ) );
                         uvst_list.Add( new Vertex( br.ReadSingle(), br.ReadSingle(), 1.0f ) );
+                        if ( vert_type == 40 ) {
+                            // пока не ясно, что это за данные (возможно, веса), поэтому пропускаем
+                            br.ReadSingle();
+                            br.ReadSingle();
+                        }
                     }
                 }
+                if ( !valid ) { continue; }
                 br.Close();
             }
 
@@ -197,6 +232,15 @@ sealed class FXM_2_OBJ {
     // читает строку из потока
     static string ReadName( BinaryReader br ) {
         int name_length = br.ReadInt32();
+        if ( name_length == 0 ) {
+            Console.WriteLine( "Empty string" );
+            return "";
+        }
+        if ( name_length > 256 ) {
+            var stream = br.BaseStream;
+            long pos = stream.Position;
+            Console.WriteLine( "Long string: " + name_length + ". At pos: " + pos );
+        }
         byte[] name = new byte[ name_length ];
         br.Read( name, 0, name_length );
         return System.Text.Encoding.Default.GetString( name );
