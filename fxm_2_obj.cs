@@ -114,7 +114,7 @@ sealed class FXM_2_OBJ {
                     // количество вершин
                     int vertex_count = br.ReadInt32();
                     // Проверяем корректность
-                    int mem = faces_count * 2 * 3 + vertex_count * 4 * 8;
+                    int mem = faces_count * 2 * 3 + vertex_count * vert_type;
                     var stream = br.BaseStream;
                     long pos = stream.Position;
                     if ( length - pos < mem ) {
