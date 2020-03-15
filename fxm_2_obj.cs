@@ -52,21 +52,30 @@ sealed class FXM_2_OBJ {
                     continue;
                 }
                 // файл fxm может содержать и данные о скелете модели
-                // здесь эти данные пропускаются, но их можно использовать при необходимости
+                // здесь эти данные сохраняются в отдельный файл, но их можно использовать, если экспортировать в формат, поддерживающий скелет
                 keyposes = br.ReadInt32();
-                for ( int kp = 0; kp < keyposes; kp++ ) {
-                    int joint_count = br.ReadInt32();
-                    for ( int j = 0; j < joint_count; j++ ) {
-                        // пропускаем 8 нулей
-                        int skip0 = br.ReadInt32();
-                        int skip1 = br.ReadInt32();
-                        if ( skip0 != 0 || skip1 != 0 ) { Console.WriteLine( "Invalid keypose zero-block in " + Path.GetFileNameWithoutExtension( fxmName ) ); }
-                        // имя
-                        string joint_name = ReadName( br );
-                        //
-                        int nesting_depth = br.ReadInt32();
-                        // пропускаем матрицу 4x4
-                        for ( int m = 0; m < 16; m++ ) { float val = br.ReadSingle(); }
+                if ( keyposes > 0 ) {
+                    using ( StreamWriter sw = new StreamWriter( Directory.GetCurrentDirectory() + "/" + Path.GetFileNameWithoutExtension( fxmName ) + ".skel" ) ) {
+                        for ( int kp = 0; kp < keyposes; kp++ ) {
+                            int joint_count = br.ReadInt32();
+                            sw.WriteLine( "Count: " + joint_count + "\n" );
+                            for ( int j = 0; j < joint_count; j++ ) {
+                                // пропускаем 8 нулей
+                                int skip0 = br.ReadInt32();
+                                int skip1 = br.ReadInt32();
+                                if ( skip0 != 0 || skip1 != 0 ) { Console.WriteLine( "Invalid keypose zero-block in " + Path.GetFileNameWithoutExtension( fxmName ) ); }
+                                // имя
+                                sw.WriteLine( ReadName( br ) );
+                                // nesting_depth
+                                sw.WriteLine( br.ReadInt32() );
+                                // матрица 4x4
+                                for ( int m = 0; m < 4; m++ ) {
+                                    sw.WriteLine( String.Format( "{0:f} {1:f} {2:f} {3:f}", br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle() ) );
+                                }
+                                sw.WriteLine();
+                            }
+                        }
+                        sw.Close();
                     }
                 }
                 bool header_valid = true;
