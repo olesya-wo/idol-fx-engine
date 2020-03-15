@@ -9,7 +9,7 @@ seq:
     type: u4
     enum: version_type
 
-  - id: header_suff
+  - id: header_suff # 100.0
     type: f4
 
   - id: zero_16
@@ -101,46 +101,53 @@ types:
     seq:
       - id: number
         type: u4
-      - id: zero
-        size: 4
-      - id: name
+      - id: folder
+        type: u4
+      - id: res_id
         type: str_len
-        repeat: expr
-        repeat-expr: 3
+      - id: file_name
+        type: str_len
+      - id: file_path
+        type: str_len
 
   material_block:
     seq:
-      - id: number
-        type: u4
-      - id: zero
-        size: 4
       - id: name
-        type: str_len
+        type: block_3_name
 
-      - id: us1
+      - id: zero2
         type: u4
         repeat: expr
-        repeat-expr: 4
+        repeat-expr: 2
 
-      - id: us2
+      - id: floats0
         type: f4
         repeat: expr
         repeat-expr: 7
-
-      - id: us3
+      - id: mtr_zero_0
         type: u4
+
+      - id: floats1
+        type: f4
         repeat: expr
-        repeat-expr: 5
+        repeat-expr: 3
+      - id: mtr_zero_1
+        type: u4
+
+      - id: floats2
+        type: f4
+        repeat: expr
+        repeat-expr: 3
+      - id: mtr_zero_2
+        type: u4
 
       - id: floats3
         type: f4
         repeat: expr
         repeat-expr: 3
-
-      - id: us4
+      - id: mtr_zero_3
         type: u4
-        repeat: expr
-        repeat-expr: 5
+
       - id: len
         type: u4
       - id: reference_on_texture
@@ -155,10 +162,14 @@ types:
     seq:
      - id: name
        type: block_3_name
+     - id: zero3
+       type: u4
+       repeat: expr
+       repeat-expr: 3
      - id: hz
        type: u4
        repeat: expr
-       repeat-expr: 6
+       repeat-expr: 3
      - id: height
        type: u4
      - id: width
@@ -168,7 +179,7 @@ types:
     seq:
       - id: name
         type: block_3_name
-      - id: hz
+      - id: mot_zero3
         type: u4
         repeat: expr
         repeat-expr: 3
@@ -177,10 +188,16 @@ types:
     seq:
       - id: name
         type: block_3_name
-      - id: hz
+      - id: zero2
         type: u4
         repeat: expr
-        repeat-expr: 5
+        repeat-expr: 2
+      - id: hz1
+        type: u4
+      - id: hz2
+        type: f4
+      - id: hz3
+        type: u4
 
   meshv4_block:
     seq:
@@ -234,32 +251,53 @@ types:
 
   font_block:
     seq:
-      - id: number
+      - id: name
+        type: block_3_name
+      - id: fnt_zero2
         type: u4
-      - id: zero
-        size: 4
-      - id: block_name
-        type: str_len
-      - id: zero_16
-        size: 16
+        repeat: expr
+        repeat-expr: 2
       - id: font_name
         type: str_len
-      - id: s1
+
+      - id: size1
         type: u4
       - id: data1
-        size: s1
-      - id: hz1
-        size: 32
-      - id: s2
+        size: size1
+
+      - id: font_size
         type: u4
-      - id: fhz
+      - id: font_zero
+        type: u4
+      - id: font_hz1
+        type: u4
+        repeat: expr
+        repeat-expr: 3
+
+      - id: f1
+        type: f4
+
+      - id: font_w
+        type: u4
+      - id: font_h
+        type: u4
+
+      - id: size2
+        type: u4
+      - id: f2
         type: f4
       - id: data2
-        size: s2
+        size: size2
+
       - id: hz2
-        size: 32
+        type: u4
+        repeat: expr
+        repeat-expr: 8
+
       - id: fdata
-        size: s2*16
+        size: 16
+        repeat: expr
+        repeat-expr: size2
 
   float11:
     seq:
